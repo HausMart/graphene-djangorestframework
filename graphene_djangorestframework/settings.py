@@ -37,9 +37,6 @@ DEFAULTS = {
     "RELAY_CONNECTION_MAX_LIMIT": 100,
 }
 
-if settings.DEBUG:
-    DEFAULTS["MIDDLEWARE"] += ("graphene_django.debug.DjangoDebugMiddleware",)
-
 # List of settings that may be in string import notation.
 IMPORT_STRINGS = ("MIDDLEWARE", "SCHEMA")
 
@@ -82,7 +79,7 @@ class GrapheneSettings(object):
     """
     A settings object, that allows API settings to be accessed as properties.
     For example:
-        from graphene_django.settings import settings
+        from graphene_djangorestframework.settings import settings
         print(settings.SCHEMA)
     Any setting with string import paths will be automatically resolved
     and return the class, rather than the string literal.

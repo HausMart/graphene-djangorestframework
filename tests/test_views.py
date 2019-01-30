@@ -462,8 +462,14 @@ def test_supports_pretty_printing(api_client):
     )
 
 
-def test_middleware_loaded(api_client):
-    middleware_url = "/graphql/middleware/"
+def test_middleware_class_loaded(api_client):
+    middleware_url = "/graphql/middleware-class/"
+    response = api_client.post(url_string(middleware_url, query="{test}"))
+    assert json.loads(response.content) == {"data": {"test": None}}
+
+
+def test_middleware_instance_loaded(api_client):
+    middleware_url = "/graphql/middleware-instance/"
     response = api_client.post(url_string(middleware_url, query="{test}"))
     assert json.loads(response.content) == {"data": {"test": None}}
 

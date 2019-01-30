@@ -1,6 +1,15 @@
 import graphene
 from graphene import ObjectType, Schema
 
+from graphene_djangorestframework.types import DjangoObjectType
+
+from .app.models import Reporter
+
+
+class ReporterType(DjangoObjectType):
+    class Meta:
+        model = Reporter
+
 
 class QueryRoot(ObjectType):
     thrower = graphene.String(required=True)

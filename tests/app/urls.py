@@ -34,8 +34,12 @@ urlpatterns = [
     url(r"^graphql/batch/$", GraphQLAPIView.as_view(graphene_batch=True)),
     url(r"^graphql/nographiql/$", GraphQLAPIView.as_view(graphiql=False)),
     url(
-        r"^graphql/middleware/$",
+        r"^graphql/middleware-class/$",
         GraphQLAPIView.as_view(graphene_middleware=[TestMiddleware]),
+    ),
+    url(
+        r"^graphql/middleware-instance/$",
+        GraphQLAPIView.as_view(graphene_middleware=[TestMiddleware()]),
     ),
     url(r"^graphql/authenticated/$", AuthenticatedGraphQLView.as_view()),
     url(r"^graphql/authenticated-admin/$", AuthenticatedAdminGraphQLView.as_view()),
