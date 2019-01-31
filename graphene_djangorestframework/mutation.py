@@ -1,8 +1,8 @@
-import graphene
+# import graphene
 
 from graphene.types.mutation import Mutation
 
-from .types import ErrorType
+# from .types import ErrorType
 from .fields import DjangoField
 
 
