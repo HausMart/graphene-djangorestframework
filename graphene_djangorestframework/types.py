@@ -1,6 +1,10 @@
+from textwrap import dedent
 from collections import OrderedDict
 
 from django.utils.functional import SimpleLazyObject
+
+import graphene
+
 from graphene import Field
 from graphene.relay import Node
 from graphene.types.objecttype import ObjectType, ObjectTypeOptions
@@ -134,3 +138,20 @@ class DjangoObjectType(ObjectType):
             return cls._meta.model.objects.get(pk=id)
         except cls._meta.model.DoesNotExist:
             return None
+
+
+class ErrorType(graphene.ObjectType):
+    field = graphene.String(
+        description=dedent(
+            """Name of a field that caused the error. A value of
+        `null` indicates that the error isn't associated with a particular
+        field."""
+        ),
+        required=False,
+    )
+    messages = graphene.List(
+        graphene.NonNull(graphene.String),
+        description="The error messages.",
+        required=True,
+    )
+

@@ -1,9 +1,12 @@
 import warnings
 
+import graphene
+
 from graphene.types.mutation import Mutation
 
 from rest_framework.exceptions import PermissionDenied
 
+from .types import ErrorType
 from .fields import DjangoField
 
 
@@ -30,3 +33,12 @@ class DjangoMutation(Mutation):
             required=required,
             permission_classes=permission_classes,
         )
+
+
+# class SerializerBaseMutation(DjangoMutation):
+#     class Meta:
+#         abstract = True
+
+#     errors = graphene.List(
+#         ErrorType, description="May contain more than one error for same field."
+#     )
