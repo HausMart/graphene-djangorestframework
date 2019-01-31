@@ -6,6 +6,7 @@ from rest_framework.fields import SkipField
 
 import graphene
 
+from graphene.types import Argument
 from graphene.types.mutation import Mutation, MutationOptions
 from graphene.types.objecttype import yank_fields_from_attrs
 from graphene.utils.str_converters import to_camel_case
@@ -19,7 +20,10 @@ class SerializerMutationOptions(MutationOptions):
     lookup_field = None
     model_class = None
     serializer_class = None
+    node_class = graphene.relay.Node
+    node_type = None
     partial = None
+    registry = None
 
 
 class DjangoMutation(Mutation):
@@ -61,7 +65,6 @@ class SerializerBaseMutation(DjangoMutation):
         lookup_field=None,
         serializer_class=None,
         model_class=None,
-        node_class=None,
         only_fields=(),
         exclude_fields=(),
         is_update=False,
@@ -114,8 +117,9 @@ class SerializerBaseMutation(DjangoMutation):
         _meta.partial = partial
         _meta.serializer_class = serializer_class
         _meta.model_class = model_class
-        _meta.fields = yank_fields_from_attrs(output_fields, _as=DjangoField)
+        _meta.fields = yank_fields_from_attrs(output_fields, _as=DjangoField, sort=False)
 
+        input_fields = yank_fields_from_attrs(input_fields, _as=Argument, sort=False)
         super(SerializerBaseMutation, cls).__init_subclass_with_meta__(
             _meta=_meta, arguments=input_fields, **options
         )
@@ -190,7 +194,6 @@ class SerializerUpdateMutation(SerializerBaseMutation):
         lookup_field=None,
         serializer_class=None,
         model_class=None,
-        node_class=None,
         only_fields=(),
         exclude_fields=(),
         partial=False,
@@ -200,7 +203,6 @@ class SerializerUpdateMutation(SerializerBaseMutation):
             lookup_field=lookup_field,
             serializer_class=serializer_class,
             model_class=model_class,
-            node_class=node_class,
             only_fields=only_fields,
             exclude_fields=exclude_fields,
             is_update=True,
