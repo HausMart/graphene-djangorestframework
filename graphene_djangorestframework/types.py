@@ -38,9 +38,9 @@ def construct_fields(model, registry, only_fields, exclude_fields):
 
 
 class DjangoObjectTypeOptions(ObjectTypeOptions):
-    model = None  # type: Model
-    registry = None  # type: Registry
-    connection = None  # type: Type[Connection]
+    model = None
+    registry = None
+    connection = None
 
     filter_fields = ()
 
@@ -154,4 +154,3 @@ class ErrorType(graphene.ObjectType):
         description="The error messages.",
         required=True,
     )
-

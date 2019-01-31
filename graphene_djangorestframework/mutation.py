@@ -1,10 +1,6 @@
-import warnings
-
 import graphene
 
 from graphene.types.mutation import Mutation
-
-from rest_framework.exceptions import PermissionDenied
 
 from .types import ErrorType
 from .fields import DjangoField

@@ -2,18 +2,11 @@ import warnings
 
 from functools import partial
 
-from django.db.models.query import QuerySet
-
-from promise import Promise
-
 from graphene.types import Field, List
 
 from rest_framework.exceptions import PermissionDenied
 
-from .settings import graphene_settings
 from .utils import maybe_queryset
-
-from graphene.types.field import Field
 
 
 def check_permission_classes(info, field, permission_classes):
