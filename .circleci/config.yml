@@ -44,11 +44,7 @@ jobs:
           name: run flake8
           command: |
             . venv/bin/activate
-            flake8
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
-
+            flake8 graphene_djangorestframework
 
       # run tests!
       - run:
@@ -56,6 +52,8 @@ jobs:
           command: |
             . venv/bin/activate
             pytest --cov=. --cov-report=xml:test-reports/coverage.xml
+
+
       - store_artifacts:
           path: test-reports
           destination: test-reports
