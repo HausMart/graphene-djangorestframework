@@ -6,7 +6,6 @@ import graphene
 
 from graphene_djangorestframework.registry import Registry
 from graphene_djangorestframework.types import DjangoObjectType
-from graphene_djangorestframework.fields import DjangoField, DjangoListField
 from graphene_djangorestframework.mutation import DjangoMutation
 
 
