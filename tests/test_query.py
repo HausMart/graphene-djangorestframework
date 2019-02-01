@@ -35,7 +35,7 @@ def test_should_query_only_fields():
                 articles
             }
         """
-        result = schema.execute(query)
+        schema.execute(query)
 
     assert e.value.args[0] == (
         "ReporterType fields must be a mapping (dict / OrderedDict) with "

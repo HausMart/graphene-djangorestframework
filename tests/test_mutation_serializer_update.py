@@ -1,7 +1,5 @@
 import json
 
-from django.utils.functional import SimpleLazyObject
-
 from rest_framework import serializers
 
 import graphene
@@ -92,7 +90,7 @@ def test_serializer_mutation_update_partial(info_with_context):
             assert lookup_field == "id"
             assert input["id"] == "2"
 
-            return SimpleLazyObject(lambda: Reporter(id=2, email="foo@bar.com"))
+            return Reporter(id=2, email="foo@bar.com")
 
     class Mutation(graphene.ObjectType):
         patch_reporter = PatchReporter.Field()
@@ -126,7 +124,7 @@ def test_serializer_mutation_update_partial_validation(info_with_context):
 
         @classmethod
         def get_instance(cls, root, info, **input):
-            return SimpleLazyObject(lambda: Reporter(id=2, email="foo@bar.com"))
+            return Reporter(id=2, email="foo@bar.com")
 
     class Mutation(graphene.ObjectType):
         patch_reporter = PatchReporter.Field()
@@ -181,9 +179,7 @@ def test_serializer_mutation_update(info_with_context):
             assert lookup_field == "id"
             assert input["id"] == "2"
 
-            return SimpleLazyObject(
-                lambda: Reporter(id=2, email="foo@bar.com", first_name="foo")
-            )
+            return Reporter(id=2, email="foo@bar.com", first_name="foo")
 
     class Mutation(graphene.ObjectType):
         update_reporter = UpdateReporter.Field()
@@ -219,9 +215,7 @@ def test_serializer_mutation_update_validate(info_with_context):
 
         @classmethod
         def get_instance(cls, root, info, **input):
-            return SimpleLazyObject(
-                lambda: Reporter(id=2, email="foo@bar.com", first_name="foo")
-            )
+            return Reporter(id=2, email="foo@bar.com", first_name="foo")
 
     class Mutation(graphene.ObjectType):
         update_reporter = UpdateReporter.Field()

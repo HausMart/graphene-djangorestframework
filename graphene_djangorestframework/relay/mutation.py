@@ -179,7 +179,9 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
                 except SkipField:
                     pass
 
-        return cls(errors=None, **kwargs)
+        value = cls(errors=None, **kwargs)
+
+        return value
 
 
 class SerializerClientIDCreateMutation(SerializerBaseClientIDMutation):

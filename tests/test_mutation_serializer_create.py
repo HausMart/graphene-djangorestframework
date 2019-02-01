@@ -1,8 +1,6 @@
 import pytest
 import json
 
-from django.utils.functional import SimpleLazyObject
-
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 
@@ -21,7 +19,7 @@ def test_serializer_create_mutation_permissions_passed_to_field(info_with_contex
             read_only_fields = ("id",)
 
         def create(self, validated_data):
-            return SimpleLazyObject(lambda: Reporter(id=1, **validated_data))
+            return Reporter(id=1, **validated_data)
 
     class CreateReporter(SerializerCreateMutation):
         class Meta:
@@ -115,7 +113,7 @@ def test_serializer_mutation_create(info_with_context):
             read_only_fields = ("id",)
 
         def create(self, validated_data):
-            return SimpleLazyObject(lambda: Reporter(id=1, **validated_data))
+            return Reporter(id=1, **validated_data)
 
     class CreateReporter(SerializerCreateMutation):
         class Meta:
@@ -150,7 +148,7 @@ def test_serializer_mutation_create_validation(info_with_context):
             read_only_fields = ("id",)
 
         def create(self, validated_data):
-            return SimpleLazyObject(lambda: Reporter(id=1, **validated_data))
+            return Reporter(id=1, **validated_data)
 
     class CreateReporter(SerializerCreateMutation):
         class Meta:
@@ -208,7 +206,7 @@ def test_serializer_mutation_create_serializer_validation(info_with_context):
             read_only_fields = ("id",)
 
         def create(self, validated_data):
-            return SimpleLazyObject(lambda: Reporter(id=1, **validated_data))
+            return Reporter(id=1, **validated_data)
 
     class CreateReporter(SerializerCreateMutation):
         class Meta:

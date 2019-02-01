@@ -12,6 +12,13 @@ from .registry import get_global_registry
 singledispatch = import_single_dispatch()
 
 
+class SerializerDjangoObjectTypeField(serializers.ReadOnlyField):
+    def __init__(self, object_type, **kwargs):
+        self.object_type = object_type
+        kwargs["source"] = "*"
+        super(SerializerDjangoObjectTypeField, self).__init__(**kwargs)
+
+
 @singledispatch
 def get_graphene_type_from_serializer_field(field):
     raise ImproperlyConfigured(
@@ -53,6 +60,13 @@ def convert_serializer_field(field, is_input=True, is_partial=False):
             global_registry = get_global_registry()
             field_model = field.Meta.model
             args = [global_registry.get_type_for_model(field_model)]
+    elif isinstance(field, SerializerDjangoObjectTypeField):
+        if is_input:
+            raise ValueError(
+                "SerializerDjangoObjectTypeField cannot be treated as an input."
+            )
+        else:
+            args = [field.object_type]
     elif isinstance(field, serializers.ListSerializer):
         field = field.child
         if is_input:
@@ -126,3 +140,8 @@ def convert_serializer_field_to_string(field):
 @get_graphene_type_from_serializer_field.register(serializers.IntegerField)
 def convert_serializer_field_to_int(field):
     return graphene.Int
+
+
+@get_graphene_type_from_serializer_field.register(SerializerDjangoObjectTypeField)
+def convert_serializer_field_to_field(field):
+    return graphene.Field

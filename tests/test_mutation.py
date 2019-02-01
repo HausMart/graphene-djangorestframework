@@ -1,5 +1,3 @@
-from django.utils.functional import SimpleLazyObject
-
 from rest_framework.permissions import IsAuthenticated
 
 import graphene
@@ -27,7 +25,7 @@ def test_django_mutation(info_with_context):
 
         @classmethod
         def mutate(cls, root, info, email):
-            reporter = SimpleLazyObject(lambda: Reporter(id=1, email=email))
+            reporter = Reporter(id=1, email=email)
             return CreateReporter(reporter=reporter)
 
     class Mutation(graphene.ObjectType):
@@ -66,7 +64,7 @@ def test_django_mutation_permissions_passed_to_field(info_with_context):
 
         @classmethod
         def mutate(cls, root, info, email):
-            reporter = SimpleLazyObject(lambda: Reporter(id=1, email=email))
+            reporter = Reporter(id=1, email=email)
             return CreateReporter(reporter=reporter)
 
     class Mutation(graphene.ObjectType):

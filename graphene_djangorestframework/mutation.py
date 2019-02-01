@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.fields import SkipField
 
 import graphene
+import graphene.relay
 
 from graphene.types import Argument
 from graphene.types.mutation import Mutation, MutationOptions

@@ -1,11 +1,14 @@
 import pytest
 
-from django.utils.functional import SimpleLazyObject
-
 from rest_framework import serializers
 
 import graphene
 
+from graphene import relay
+
+from graphene_djangorestframework.registry import Registry
+from graphene_djangorestframework.types import DjangoObjectType
+from graphene_djangorestframework.serializers import SerializerDjangoObjectTypeField
 from graphene_djangorestframework.relay.mutation import SerializerClientIDCreateMutation
 
 from ..app.models import Reporter
@@ -47,11 +50,22 @@ def test_serializer_client_id_mutation_serializer_node_class_required():
 
 
 def test_serializer_client_id_mutation_create_schema(info_with_context):
-    class ReporterSerializer(serializers.ModelSerializer):
+    class ReporterType(DjangoObjectType):
         class Meta:
             model = Reporter
-            fields = ("id", "email", "first_name")
-            read_only_fields = ("id",)
+            only_fields = ("id", "email", "first_name")
+            interfaces = (relay.Node,)
+            registry = Registry()
+
+    class ReporterSerializer(serializers.ModelSerializer):
+        reporter = SerializerDjangoObjectTypeField(object_type=ReporterType)
+
+        class Meta:
+            model = Reporter
+            fields = ("email", "first_name", "reporter")
+            extra_kwargs = {
+                "first_name": {"write_only": True},
+            }
 
     class CreateReporter(SerializerClientIDCreateMutation):
         class Meta:
@@ -76,9 +90,8 @@ input CreateReporterInput {
 }
 
 type CreateReporterPayload {
-  id: Int
   email: String
-  firstName: String
+  reporter: ReporterType
   errors: [ErrorType]
   clientMutationId: String
 }
@@ -91,19 +104,43 @@ type ErrorType {
 type Mutation {
   createReporter(input: CreateReporterInput!): CreateReporterPayload
 }
+
+interface Node {
+  id: ID!
+}
+
+type ReporterType implements Node {
+  id: ID!
+  firstName: String!
+  email: String!
+}
 """.lstrip()
     )
 
 
-def test_serializer_client_id_mutation_create(info_with_context):
-    class ReporterSerializer(serializers.ModelSerializer):
+def test_serializer_client_id_mutation_create_with_object_type_output(
+    info_with_context
+):
+    class ReporterType(DjangoObjectType):
         class Meta:
             model = Reporter
-            fields = ("id", "email", "first_name")
-            read_only_fields = ("id",)
+            only_fields = ("id", "email", "first_name")
+            interfaces = (relay.Node,)
+            registry = Registry()
+
+    class ReporterSerializer(serializers.ModelSerializer):
+        reporter = SerializerDjangoObjectTypeField(object_type=ReporterType)
+
+        class Meta:
+            model = Reporter
+            fields = ("email", "first_name", "reporter")
+            extra_kwargs = {
+                "first_name": {"write_only": True},
+                "email": {"write_only": True},
+            }
 
         def create(self, validated_data):
-            return SimpleLazyObject(lambda: Reporter(id=1, **validated_data))
+            return Reporter(id=1, **validated_data)
 
     class CreateReporter(SerializerClientIDCreateMutation):
         class Meta:
@@ -117,7 +154,48 @@ def test_serializer_client_id_mutation_create(info_with_context):
     query = """
         mutation CreateReporter {
           createReporter (input: {email: "foo@bar.com", firstName: "Foo"}) {
-            id,
+              reporter {
+                id,
+                email,
+                firstName
+              }
+          }
+        }
+    """
+    result = schema.execute(query, context=info_with_context().context)
+    assert not result.errors
+    assert result.data == {
+        "createReporter": {
+            "reporter": {
+                "id": "UmVwb3J0ZXJUeXBlOjE=",
+                "email": "foo@bar.com",
+                "firstName": "Foo",
+            }
+        }
+    }
+
+
+def test_serializer_client_id_mutation_create_with_serializer_output(info_with_context):
+    class ReporterSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Reporter
+            fields = ("email", "first_name",)
+
+        def create(self, validated_data):
+            return Reporter(id=1, **validated_data)
+
+    class CreateReporter(SerializerClientIDCreateMutation):
+        class Meta:
+            serializer_class = ReporterSerializer
+
+    class Mutation(graphene.ObjectType):
+        create_reporter = CreateReporter.Field()
+
+    schema = graphene.Schema(mutation=Mutation)
+
+    query = """
+        mutation CreateReporter {
+          createReporter (input: {email: "foo@bar.com", firstName: "Foo"}) {
             email,
             firstName
           }
@@ -126,5 +204,8 @@ def test_serializer_client_id_mutation_create(info_with_context):
     result = schema.execute(query, context=info_with_context().context)
     assert not result.errors
     assert result.data == {
-        "createReporter": {"id": 1, "email": "foo@bar.com", "firstName": "Foo"}
+        "createReporter": {
+            "email": "foo@bar.com",
+            "firstName": "Foo",
+        }
     }
