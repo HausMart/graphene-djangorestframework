@@ -6,7 +6,7 @@ from rest_framework.fields import SkipField
 
 import graphene
 
-from graphene.types import InputField
+from graphene.types import InputField, Field
 from graphene.relay.mutation import ClientIDMutation
 from graphene.types.objecttype import yank_fields_from_attrs
 from graphene.utils.str_converters import to_camel_case
@@ -117,7 +117,7 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
         _meta.serializer_class = serializer_class
         _meta.model_class = model_class
         _meta.registry = registry
-        _meta.fields = yank_fields_from_attrs(output_fields, _as=DjangoField)
+        _meta.fields = yank_fields_from_attrs(output_fields, _as=Field)
 
         if node_class:
             _meta.node_class = node_class
