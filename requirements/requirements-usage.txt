@@ -5,3 +5,4 @@ Django>=1.11
 djangorestframework>=3.9.0
 singledispatch>=3.4.0.3
 promise>=2.1
+django-filter>=2
