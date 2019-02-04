@@ -36,7 +36,7 @@ setup(
     ],
     setup_requires=["pytest-runner"],
     keywords="",
-    packages=find_packages(exclude=["tests"]),
+    packages=find_packages(exclude=['tests*']),
     extras_require={"test": test_requirements},
     install_requires=requirements,
     tests_require=test_requirements,
