@@ -24,7 +24,7 @@ setup(
     description="Graphene Django Rest Framework Integration",
     long_description=open("README.rst").read(),
     url="https://github.com/HausMart/graphene-djangorestframework",
-    author="Hilmar Hilmrasson",
+    author="Hilmar Hilmarsson",
     author_email="hilmar@hausmart.com",
     license="MIT",
     classifiers=[
@@ -37,6 +37,7 @@ setup(
     setup_requires=["pytest-runner"],
     keywords="",
     packages=find_packages(exclude=["tests"]),
+    extras_require={"test": test_requirements},
     install_requires=requirements,
     tests_require=test_requirements,
     include_package_data=True,
