@@ -9,6 +9,8 @@ from graphene import Field
 from graphene.relay import Node
 from graphene.types.objecttype import ObjectType, ObjectTypeOptions
 from graphene.types.utils import yank_fields_from_attrs
+from graphene.types.unmountedtype import UnmountedType
+
 
 from .relay.connection import DjangoConnection
 from .converter import convert_django_field_with_choices
@@ -154,3 +156,8 @@ class ErrorType(graphene.ObjectType):
         description="The error messages.",
         required=True,
     )
+
+
+class DictType(UnmountedType):
+    key = graphene.String()
+    value = graphene.String()

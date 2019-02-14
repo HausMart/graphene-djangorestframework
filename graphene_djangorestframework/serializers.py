@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 import graphene
 
+from .types import DictType
 from .utils import import_single_dispatch
 from .registry import get_global_registry
 
@@ -145,3 +146,62 @@ def convert_serializer_field_to_int(field):
 @get_graphene_type_from_serializer_field.register(SerializerDjangoObjectTypeField)
 def convert_serializer_field_to_field(field):
     return graphene.Field
+
+
+@get_graphene_type_from_serializer_field.register(serializers.ModelSerializer)
+def convert_serializer_to_field(field):
+    return graphene.Field
+
+
+@get_graphene_type_from_serializer_field.register(serializers.ListSerializer)
+def convert_list_serializer_to_field(field):
+    child_type = get_graphene_type_from_serializer_field(field.child)
+    return (graphene.List, child_type)
+
+
+@get_graphene_type_from_serializer_field.register(serializers.BooleanField)
+def convert_serializer_field_to_bool(field):
+    return graphene.Boolean
+
+
+@get_graphene_type_from_serializer_field.register(serializers.FloatField)
+@get_graphene_type_from_serializer_field.register(serializers.DecimalField)
+def convert_serializer_field_to_float(field):
+    return graphene.Float
+
+
+@get_graphene_type_from_serializer_field.register(serializers.DateTimeField)
+def convert_serializer_field_to_datetime_time(field):
+    return graphene.types.datetime.DateTime
+
+
+@get_graphene_type_from_serializer_field.register(serializers.DateField)
+def convert_serializer_field_to_date_time(field):
+    return graphene.types.datetime.Date
+
+
+@get_graphene_type_from_serializer_field.register(serializers.TimeField)
+def convert_serializer_field_to_time(field):
+    return graphene.types.datetime.Time
+
+
+@get_graphene_type_from_serializer_field.register(serializers.ListField)
+def convert_serializer_field_to_list(field, is_input=True):
+    child_type = get_graphene_type_from_serializer_field(field.child)
+
+    return (graphene.List, child_type)
+
+
+@get_graphene_type_from_serializer_field.register(serializers.DictField)
+def convert_serializer_field_to_dict(field):
+    return DictType
+
+
+@get_graphene_type_from_serializer_field.register(serializers.JSONField)
+def convert_serializer_field_to_jsonstring(field):
+    return graphene.types.json.JSONString
+
+
+@get_graphene_type_from_serializer_field.register(serializers.MultipleChoiceField)
+def convert_serializer_field_to_list_of_string(field):
+    return (graphene.List, graphene.String)
