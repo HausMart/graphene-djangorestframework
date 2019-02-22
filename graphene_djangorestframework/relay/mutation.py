@@ -143,13 +143,21 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
                 "instance": instance,
                 "data": input,
                 "partial": partial,
-                "context": {"request": info.context.get("request", None)},
+                "context": {
+                    "request": info.context.get("request", None),
+                    "info": info,
+                    "mutation": cls,
+                },
             }
 
         return {
             "data": input,
             "partial": partial,
-            "context": {"request": info.context.get("request", None)},
+            "context": {
+                "request": info.context.get("request", None),
+                "info": info,
+                "mutation": cls,
+            },
         }
 
     @classmethod

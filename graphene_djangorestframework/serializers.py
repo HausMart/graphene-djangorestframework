@@ -1,8 +1,13 @@
+import binascii
+
 from collections import OrderedDict
 
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
+
+from graphql_relay import from_global_id
 
 import graphene
 
@@ -10,7 +15,9 @@ from .types import DictType
 from .utils import import_single_dispatch
 from .registry import get_global_registry
 
+
 singledispatch = import_single_dispatch()
+global_registry = get_global_registry()
 
 
 class SerializerDjangoObjectTypeField(serializers.ReadOnlyField):
@@ -18,6 +25,68 @@ class SerializerDjangoObjectTypeField(serializers.ReadOnlyField):
         self.object_type = object_type
         kwargs["source"] = "*"
         super(SerializerDjangoObjectTypeField, self).__init__(**kwargs)
+
+
+class SerializerRelayIDField(serializers.CharField):
+    default_error_messages = {
+        "invalid_id": _("Not a valid ID."),
+        "not_found": _("No {type} matches the given query."),
+    }
+
+    def __init__(self, object_type=None, method_name=None, node_class=None, **kwargs):
+        self.object_type = object_type
+        self.method_name = method_name
+        self.node_class = node_class if node_class else graphene.relay.Node
+
+        if node_class and not issubclass(node_class, graphene.relay.Node):
+            raise Exception("node_class must be a subclass of relay.Node")
+
+        if not self.object_type and not self.method_name:
+            raise Exception("method_name must be passed if object_type is missing")
+
+        kwargs["write_only"] = True
+        super(SerializerRelayIDField, self).__init__(**kwargs)
+
+    def run_validation(self, data=serializers.empty):
+        value = super(SerializerRelayIDField, self).run_validation(data)
+
+        if value:
+            info = self.parent.context.get("info")
+            node_class = self.node_class
+
+            try:
+                _type, _id = from_global_id(value)
+                graphene_type = info.schema.get_type(_type).graphene_type
+            except binascii.Error:
+                self.fail("invalid_id")
+
+            if not _type or not _id:
+                self.fail("invalid_id")
+
+            if self.object_type and graphene_type != self.object_type:
+                raise serializers.ValidationError(
+                    _("Must receive a %(type)s ID.")
+                    % {"type": self.object_type._meta.name}
+                )
+
+            if self.method_name:
+                method = getattr(self.parent, self.method_name)
+                return method(value, object_type=graphene_type, id=_id)
+            else:
+                # We make sure the ObjectType implements the "Node" interface
+                if node_class not in graphene_type._meta.interfaces:
+                    self.fail("not_found", type=graphene_type._meta.model._meta.object_name)
+
+                get_node = getattr(graphene_type, "get_node", None)
+                if get_node:
+                    instance = get_node(info, _id)
+
+                    if not instance:
+                        self.fail("not_found", type=graphene_type._meta.model._meta.object_name)
+
+                    return instance
+
+        return None
 
 
 @singledispatch
@@ -205,3 +274,8 @@ def convert_serializer_field_to_jsonstring(field):
 @get_graphene_type_from_serializer_field.register(serializers.MultipleChoiceField)
 def convert_serializer_field_to_list_of_string(field):
     return (graphene.List, graphene.String)
+
+
+@get_graphene_type_from_serializer_field.register(SerializerRelayIDField)
+def convert_serializer_field_to_field(field):
+    return graphene.ID
