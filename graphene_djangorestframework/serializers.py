@@ -71,7 +71,7 @@ class SerializerRelayIDField(serializers.CharField):
 
             if self.method_name:
                 method = getattr(self.parent, self.method_name)
-                return method(value, object_type=graphene_type, id=_id)
+                return method(value, object_type=graphene_type, object_id=_id)
             else:
                 # We make sure the ObjectType implements the "Node" interface
                 if node_class not in graphene_type._meta.interfaces:

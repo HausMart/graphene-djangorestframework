@@ -563,10 +563,10 @@ def test_serializer_client_id_mutation_create_with_ID_and_method_name(
             object_type=ReporterType, method_name="resolve_reporter"
         )
 
-        def resolve_reporter(self, value, object_type, id):
+        def resolve_reporter(self, value, object_type, object_id):
             assert value == "UmVwb3J0ZXJUeXBlOjE="
             assert object_type == ReporterType
-            assert id == "1"
+            assert object_id == "1"
             return Reporter(
                 id=1, first_name="FooResolved", email="foo-resolved@bar.com"
             )
