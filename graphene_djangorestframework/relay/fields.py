@@ -8,7 +8,7 @@ from graphql_relay.connection.arrayconnection import connection_from_list_slice
 
 from ..utils import maybe_queryset
 from ..settings import graphene_settings
-from ..fields import check_permission_classes
+from ..fields import check_permission_classes, check_throttle_classes
 
 
 class DjangoConnectionField(ConnectionField):
@@ -22,6 +22,7 @@ class DjangoConnectionField(ConnectionField):
             graphene_settings.RELAY_CONNECTION_ENFORCE_FIRST_OR_LAST,
         )
         self.permission_classes = kwargs.pop("permission_classes", None)
+        self.throttle_classes = kwargs.pop("throttle_classes", None)
         super(DjangoConnectionField, self).__init__(*args, **kwargs)
 
     @property
@@ -95,11 +96,13 @@ class DjangoConnectionField(ConnectionField):
         max_limit,
         enforce_first_or_last,
         permission_classes,
+        throttle_classes,
         root,
         info,
         **args
     ):
         check_permission_classes(info, cls, permission_classes)
+        check_throttle_classes(info, cls, throttle_classes)
 
         first = args.get("first")
         last = args.get("last")
@@ -139,4 +142,5 @@ class DjangoConnectionField(ConnectionField):
             self.max_limit,
             self.enforce_first_or_last,
             self.permission_classes,
+            self.throttle_classes,
         )

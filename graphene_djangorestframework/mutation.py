@@ -39,6 +39,7 @@ class DjangoMutation(Mutation):
         deprecation_reason=None,
         required=False,
         permission_classes=None,
+        throttle_classes=None,
     ):
         return DjangoField(
             cls._meta.output,
@@ -49,6 +50,7 @@ class DjangoMutation(Mutation):
             deprecation_reason=deprecation_reason,
             required=required,
             permission_classes=permission_classes,
+            throttle_classes=throttle_classes,
         )
 
 

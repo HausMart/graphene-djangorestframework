@@ -31,6 +31,7 @@ class _anon(object):
 class _request(object):
     def __init__(self, user=None):
         self.user = user
+        self.META = {}
 
 
 class _view(object):

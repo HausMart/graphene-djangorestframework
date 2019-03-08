@@ -83,6 +83,7 @@ class DjangoFilterConnectionField(DjangoConnectionField):
         max_limit,
         enforce_first_or_last,
         permission_classes,
+        throttle_classes,
         filterset_class,
         filtering_args,
         root,
@@ -103,6 +104,7 @@ class DjangoFilterConnectionField(DjangoConnectionField):
             max_limit,
             enforce_first_or_last,
             permission_classes,
+            throttle_classes,
             root,
             info,
             **args
@@ -117,6 +119,7 @@ class DjangoFilterConnectionField(DjangoConnectionField):
             self.max_limit,
             self.enforce_first_or_last,
             self.permission_classes,
+            self.throttle_classes,
             self.filterset_class,
             self.filtering_args,
         )

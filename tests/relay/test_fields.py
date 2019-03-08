@@ -1,6 +1,7 @@
 from django.utils.functional import SimpleLazyObject
 
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import UserRateThrottle
 
 import graphene
 
@@ -63,7 +64,9 @@ def test_django_field_with_permission_classes(info_with_context):
             registry = Registry()
 
     class Query(graphene.ObjectType):
-        reporters = DjangoConnectionField(ReporterType, permission_classes=[IsAuthenticated])
+        reporters = DjangoConnectionField(
+            ReporterType, permission_classes=[IsAuthenticated]
+        )
 
         def resolve_reporters(self, info):
             return [SimpleLazyObject(lambda: Reporter(id=1))]
@@ -83,4 +86,52 @@ def test_django_field_with_permission_classes(info_with_context):
     result = schema.execute(query, context=info_with_context().context)
     assert len(result.errors) == 1
     assert str(result.errors[0]) == "You do not have permission to perform this action."
+    assert result.data == {"reporters": None}
+
+
+def test_django_field_with_throttle_classes(info_with_context, info_with_context_anon):
+    class TestThrottle(UserRateThrottle):
+        scope = "test_django_field_with_throttle_classes"
+
+        def get_rate(self):
+            return "1/minute"
+
+    class ReporterType(DjangoObjectType):
+        class Meta:
+            model = Reporter
+            only_fields = ("id",)
+            interfaces = (relay.Node,)
+            registry = Registry()
+
+    class Query(graphene.ObjectType):
+        reporters = DjangoConnectionField(ReporterType, throttle_classes=[TestThrottle])
+
+        def resolve_reporters(self, info):
+            return [SimpleLazyObject(lambda: Reporter(id=1))]
+
+    schema = graphene.Schema(query=Query)
+    query = """
+        query {
+          reporters {
+            totalCount
+          }
+        }
+    """
+
+    # First request. Not throttled.
+    result = schema.execute(
+        query, context=info_with_context(user=info_with_context_anon()).context
+    )
+    assert result.errors is None
+    assert result.data == {"reporters": {"totalCount": 1}}
+
+    # Second request. Throttled.
+    result = schema.execute(
+        query, context=info_with_context(user=info_with_context_anon()).context
+    )
+    assert len(result.errors) == 1
+    assert (
+        str(result.errors[0])
+        == "Request was throttled. Expected available in 60 seconds."
+    )
     assert result.data == {"reporters": None}

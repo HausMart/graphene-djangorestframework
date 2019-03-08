@@ -1,16 +1,15 @@
-import warnings
-
 from functools import partial
 
 from graphene.types.utils import get_type
 from graphene.relay import node as graphene_node
 
-from rest_framework.exceptions import PermissionDenied
+from ..fields import check_permission_classes, check_throttle_classes
 
 
 class DjangoNodeField(graphene_node.NodeField):
     def __init__(self, *args, **kwargs):
         self.permission_classes = kwargs.pop("permission_classes", None)
+        self.throttle_classes = kwargs.pop("throttle_classes", None)
 
         super(DjangoNodeField, self).__init__(*args, **kwargs)
 
@@ -19,6 +18,7 @@ class DjangoNodeField(graphene_node.NodeField):
             self.node_type.node_resolver,
             get_type(self.field_type),
             self.permission_classes,
+            self.throttle_classes,
         )
 
 
@@ -28,24 +28,10 @@ class DjangoNode(graphene_node.Node):
         return DjangoNodeField(cls, *args, **kwargs)
 
     @classmethod
-    def node_resolver(cls, only_type, permission_classes, root, info, id):
-        if not permission_classes:
-            if hasattr(info, "context") and info.context and info.context.get("view", None):
-                permission_classes = info.context.get(
-                    "view"
-                ).resolver_permission_classes
-            else:
-                warnings.warn(
-                    UserWarning(
-                        "DjangoNodeField should not be called without context."
-                    )
-                )
-
-        if permission_classes:
-            for permission in [p() for p in permission_classes]:
-                if not permission.has_permission(
-                    info.context.get("request"), info.context.get("view")
-                ):
-                    raise PermissionDenied(detail=getattr(permission, "message", None))
+    def node_resolver(
+        cls, only_type, permission_classes, throttle_classes, root, info, id
+    ):
+        check_permission_classes(info, cls, permission_classes)
+        check_throttle_classes(info, cls, throttle_classes)
 
         return super(DjangoNode, cls).node_resolver(only_type, root, info, id)
