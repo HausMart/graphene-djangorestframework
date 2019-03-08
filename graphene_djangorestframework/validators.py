@@ -55,7 +55,9 @@ class DocumentDepthValidator(BaseDocumentValidator):
 
     def get_queries_and_mutations(self, definitions):
         query_definitions = {
-            d.name.value: d for d in definitions if isinstance(d, OperationDefinition)
+            d.name.value if d.name and d.name.value else "": d
+            for d in definitions
+            if isinstance(d, OperationDefinition)
         }
 
         return query_definitions
