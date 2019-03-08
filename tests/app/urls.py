@@ -4,6 +4,7 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from graphene_djangorestframework.views import GraphQLAPIView
+from graphene_djangorestframework.validators import DocumentDepthValidator
 
 from ..schema import schema
 from ..middleware import TestMiddleware
@@ -25,6 +26,14 @@ class AuthenticatedAdminGraphQLView(GraphQLAPIView):
     permission_classes = (IsAdminUser,)
 
 
+class CustomDepthValidator(DocumentDepthValidator):
+    max_depth = 3
+
+
+class DepthValidatedGraphQLView(GraphQLAPIView):
+    graphene_validation_classes = [CustomDepthValidator]
+
+
 urlpatterns = [
     url(r"^graphql/inherited/$", CustomGraphQLView.as_view(graphiql=True)),
     url(
@@ -43,5 +52,6 @@ urlpatterns = [
     ),
     url(r"^graphql/authenticated/$", AuthenticatedGraphQLView.as_view()),
     url(r"^graphql/authenticated-admin/$", AuthenticatedAdminGraphQLView.as_view()),
+    url(r"^graphql/depth-limited/$", DepthValidatedGraphQLView.as_view()),
     url(r"^graphql/$", GraphQLAPIView.as_view(graphiql=True)),
 ]

@@ -18,6 +18,7 @@ from rest_framework.views import exception_handler as rest_framework_exception_h
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 
+from .exceptions import InvalidDocument
 from .settings import graphene_settings
 from .parsers import GraphQLJSONParser, GraphQLParser, GraphQLPlainParser
 
@@ -64,6 +65,7 @@ class GraphQLAPIView(APIView):
     graphene_root_value = None
     graphene_batch = False
     graphene_pretty = False
+    graphene_validation_classes = []
 
     renderer_classes = (JSONRenderer, TemplateHTMLRenderer)
     parser_classes = (
@@ -202,6 +204,9 @@ class GraphQLAPIView(APIView):
                     ),
                 )
 
+        # Check validation
+        self.check_document_validators(document)
+
         try:
             extra_options = {}
             if self.graphene_executor:
@@ -289,3 +294,29 @@ class GraphQLAPIView(APIView):
             result = None
 
         return result, status_code
+
+    def document_invalid(self, document, message=None):
+        """
+        If document is invalid, determine what kind of exception to raise.
+        """
+        raise InvalidDocument(detail=message)
+
+    def get_document_validators(self):
+        """
+        Instantiates and returns the list of document validators that this view uses.
+        """
+        return [
+            document_validator()
+            for document_validator in self.graphene_validation_classes
+        ]
+
+    def check_document_validators(self, document):
+        """
+        Check if document should be validated.
+        Raises an appropriate exception if the document is not valid.
+        """
+        for document_validator in self.get_document_validators():
+            if not document_validator.allow_document(document, self):
+                self.document_invalid(
+                    document, message=getattr(document_validator, "message", None)
+                )

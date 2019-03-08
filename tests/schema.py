@@ -11,10 +11,22 @@ class ReporterType(DjangoObjectType):
         model = Reporter
 
 
+class NestType(ObjectType):
+    test = graphene.String()
+    nest = graphene.Field("tests.schema.NestType")
+
+    def resolve_test(self, info):
+        return "test"
+
+    def resolve_nest(self, info):
+        return {}
+
+
 class QueryRoot(ObjectType):
     thrower = graphene.String(required=True)
     request = graphene.String(required=True)
     test = graphene.String(who=graphene.String())
+    nest = graphene.Field(NestType)
 
     def resolve_thrower(self, info):
         raise Exception("Throws!")
@@ -24,6 +36,9 @@ class QueryRoot(ObjectType):
 
     def resolve_test(self, info, who=None):
         return "Hello %s" % (who or "World")
+
+    def resolve_nest(self, info):
+        return {}
 
 
 class MutationRoot(ObjectType):

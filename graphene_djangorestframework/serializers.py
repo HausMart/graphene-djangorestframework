@@ -277,5 +277,5 @@ def convert_serializer_field_to_list_of_string(field):
 
 
 @get_graphene_type_from_serializer_field.register(SerializerRelayIDField)
-def convert_serializer_field_to_field(field):
+def convert_serializer_relay_id_field_to_id(field):
     return graphene.ID
