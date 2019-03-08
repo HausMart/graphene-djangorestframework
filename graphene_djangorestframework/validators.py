@@ -3,8 +3,6 @@ import re
 from django.utils.encoding import force_text
 from django.utils.translation import gettext_lazy as _
 
-from rest_framework.exceptions import ValidationError
-
 from graphql.language.ast import (
     FragmentDefinition,
     OperationDefinition,
@@ -40,9 +38,10 @@ class DocumentDepthValidator(BaseDocumentValidator):
         queries = self.get_queries_and_mutations(definitions)
 
         for name in queries:
-            try:
-                self.determine_depth(queries[name], fragments, name)
-            except ValidationError:
+            if self.determine_depth(queries[name], fragments, name) > self.max_depth:
+                self.message = force_text(self.default_message).format(
+                    operation=name, depth=self.max_depth
+                )
                 return False
 
         return True
@@ -56,20 +55,12 @@ class DocumentDepthValidator(BaseDocumentValidator):
 
     def get_queries_and_mutations(self, definitions):
         query_definitions = {
-            d.name.value if d.name and d.name.value else "": d
-            for d in definitions
-            if isinstance(d, OperationDefinition)
+            d.name.value: d for d in definitions if isinstance(d, OperationDefinition)
         }
 
         return query_definitions
 
-    def determine_depth(self, node, fragments, operation_name, current_depth=0):
-        if current_depth > self.max_depth:
-            self.message = force_text(self.default_message).format(
-                operation=operation_name, depth=self.max_depth
-            )
-            raise ValidationError()
-
+    def determine_depth(self, node, fragments, operation_name):
         if isinstance(node, Field):
             p = re.compile(r"^__")
 
@@ -78,15 +69,13 @@ class DocumentDepthValidator(BaseDocumentValidator):
 
             return 1 + max(
                 [
-                    self.determine_depth(
-                        selection, fragments, operation_name, current_depth + 1
-                    )
+                    self.determine_depth(selection, fragments, operation_name)
                     for selection in node.selection_set.selections
                 ]
             )
         elif isinstance(node, FragmentSpread):
             return self.determine_depth(
-                fragments[node.name.value], fragments, operation_name, current_depth
+                fragments[node.name.value], fragments, operation_name
             )
         elif (
             isinstance(node, InlineFragment)
@@ -95,9 +84,7 @@ class DocumentDepthValidator(BaseDocumentValidator):
         ):
             return max(
                 [
-                    self.determine_depth(
-                        selection, fragments, operation_name, current_depth
-                    )
+                    self.determine_depth(selection, fragments, operation_name)
                     for selection in node.selection_set.selections
                 ]
             )
