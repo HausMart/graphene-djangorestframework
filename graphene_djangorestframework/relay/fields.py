@@ -61,7 +61,7 @@ class DjangoConnectionField(ConnectionField):
         return queryset & default_queryset
 
     @classmethod
-    def resolve_connection(cls, connection, default_manager, args, iterable):
+    def resolve_connection(cls, connection, default_manager, args, info, iterable):
         if iterable is None:
             iterable = default_manager
         iterable = maybe_queryset(iterable)
@@ -126,7 +126,7 @@ class DjangoConnectionField(ConnectionField):
                 args["last"] = min(last, max_limit)
 
         iterable = resolver(root, info, **args)
-        on_resolve = partial(cls.resolve_connection, connection, default_manager, args)
+        on_resolve = partial(cls.resolve_connection, connection, default_manager, args, info)
 
         if Promise.is_thenable(iterable):
             return Promise.resolve(iterable).then(on_resolve)
