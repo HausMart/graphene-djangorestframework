@@ -163,6 +163,21 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
         }
 
     @classmethod
+    def format_errors(cls, errors, field="", path=None):
+        formatted_errors = []
+        if path is None:
+            path = []
+        for key, value in errors.items():
+            if isinstance(value, dict):
+                formatted_errors += cls.format_errors(value, field=key + ".", path=path + [key])
+            else:
+                formatted_errors.append(
+                    ErrorType(field=field + to_camel_case(key), messages=value, path=path + [key])
+                )
+
+        return formatted_errors
+
+    @classmethod
     def mutate_and_get_payload(cls, root, info, **input):
         kwargs = cls.get_serializer_kwargs(root, info, **input)
         serializer = cls._meta.serializer_class(**kwargs)
@@ -170,10 +185,7 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
         if serializer.is_valid():
             return cls.perform_mutate(serializer, info)
         else:
-            errors = [
-                ErrorType(field=to_camel_case(key), messages=value)
-                for key, value in serializer.errors.items()
-            ]
+            errors = cls.format_errors(serializer.errors)
 
             return cls(errors=errors)
 

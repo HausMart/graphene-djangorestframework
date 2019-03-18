@@ -73,6 +73,7 @@ schema {
 type ErrorType {
   field: String
   messages: [String!]!
+  path: [String!]
 }
 
 type Mutation {

@@ -156,6 +156,13 @@ class ErrorType(graphene.ObjectType):
         description="The error messages.",
         required=True,
     )
+    path = graphene.List(
+        graphene.NonNull(graphene.String),
+        description="""Path to the name of a field that caused the error.
+        A value of `null` indicates that the error isn't associated with a
+        particular field.""",
+        required=False,
+    )
 
 
 class DictType(UnmountedType):

@@ -292,6 +292,7 @@ scalar Date
 type ErrorType {
   field: String
   messages: [String!]!
+  path: [String!]
 }
 
 type Mutation {
@@ -450,6 +451,89 @@ def test_serializer_client_id_mutation_create_with_ID_input_validation(
         }
     }
 
+
+def test_serializer_client_id_mutation_create_with_nested_validations(
+    info_with_context
+):
+    class ReporterType(DjangoObjectType):
+        class Meta:
+            model = Reporter
+            only_fields = ("id", "email", "first_name")
+            interfaces = (relay.Node,)
+            registry = Registry()
+
+        @classmethod
+        def get_node(cls, info, id):
+            assert id == "1"
+            return None
+
+    class ArticleType(DjangoObjectType):
+        class Meta:
+            model = Article
+            only_fields = ("id", "headline", "pub_date")
+            interfaces = (relay.Node,)
+            registry = Registry()
+
+    class ReporterSerializer(serializers.ModelSerializer):
+        id = SerializerRelayIDField(object_type=ReporterType, write_only=True)
+
+        class Meta:
+            model = Reporter
+            fields = ("id",)
+            extra_kwargs = {"id": {"write_only": True}}
+
+    class ArticleSerializer(serializers.ModelSerializer):
+        article = SerializerDjangoObjectTypeField(object_type=ArticleType)
+        reporter = ReporterSerializer(write_only=True)
+
+        class Meta:
+            model = Article
+            fields = ("headline", "article", "reporter")
+            extra_kwargs = {"headline": {"write_only": True}}
+
+    class CreateArticle(SerializerClientIDCreateMutation):
+        class Meta:
+            serializer_class = ArticleSerializer
+
+    class Mutation(graphene.ObjectType):
+        create_article = CreateArticle.Field()
+
+    schema = graphene.Schema(mutation=Mutation, types=[ReporterType])
+
+    # Test with invalid nested field
+    query = """
+        mutation CreateArticle {
+          createArticle (input: {headline: "", reporter: {id: ""}}) {
+              article {
+                id
+              }
+              errors {
+                  field
+                  messages
+                  path
+              }
+          }
+        }
+    """
+    result = schema.execute(query, context=info_with_context().context)
+    assert not result.errors
+    assert json.loads(json.dumps(result.data)) == {
+        "createArticle": {
+            "errors": [
+                {
+                    "field": "headline",
+                    "messages": ["This field may not be blank."],
+                    "path": ["headline"],
+                },
+                {
+                    "field": "reporter.id",
+                    "messages": ["This field may not be blank."],
+                    "path": ["reporter", "id"],
+                },
+            ],
+            "article": None,
+        }
+    }
 
 def test_serializer_client_id_mutation_create_with_ID_and_no_method_name(
     info_with_context
