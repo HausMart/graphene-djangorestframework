@@ -161,8 +161,13 @@ def convert_serializer_to_input_type(serializer_class):
         if converted_field:
             items[name] = converted_field
 
+    if hasattr(serializer.Meta, 'input_name'):
+        input_name = serializer.Meta.input_name
+    else:
+        input_name = "{}Input".format(serializer.__class__.__name__)
+
     return type(
-        "{}Input".format(serializer.__class__.__name__),
+        input_name,
         (graphene.InputObjectType,),
         items,
     )
