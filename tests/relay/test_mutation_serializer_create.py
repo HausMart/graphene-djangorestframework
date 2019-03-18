@@ -479,16 +479,20 @@ def test_serializer_client_id_mutation_create_with_nested_validations(
 
         class Meta:
             model = Reporter
-            fields = ("id",)
-            extra_kwargs = {"id": {"write_only": True}}
+            fields = ("id", "email")
+            extra_kwargs = {"id": {"write_only": True}, "email": {"write_only": True}}
+
+    class EditorSerializer(ReporterSerializer):
+        pass
 
     class ArticleSerializer(serializers.ModelSerializer):
         article = SerializerDjangoObjectTypeField(object_type=ArticleType)
         reporter = ReporterSerializer(write_only=True)
+        editors = EditorSerializer(write_only=True, many=True)
 
         class Meta:
             model = Article
-            fields = ("headline", "article", "reporter")
+            fields = ("headline", "article", "reporter", "editors")
             extra_kwargs = {"headline": {"write_only": True}}
 
     class CreateArticle(SerializerClientIDCreateMutation):
@@ -503,7 +507,7 @@ def test_serializer_client_id_mutation_create_with_nested_validations(
     # Test with invalid nested field
     query = """
         mutation CreateArticle {
-          createArticle (input: {headline: "", reporter: {id: ""}}) {
+          createArticle (input: {headline: "", reporter: {id: "", email: "foo"}, editors: [{id: "", email: ""}, {id: "", email: "foo"}]}) {
               article {
                 id
               }
@@ -530,10 +534,36 @@ def test_serializer_client_id_mutation_create_with_nested_validations(
                     "messages": ["This field may not be blank."],
                     "path": ["reporter", "id"],
                 },
+                {
+                    "field": "reporter.email",
+                    "messages": ["Enter a valid email address."],
+                    "path": ["reporter", "email"],
+                },
+                {
+                    "field": "editors[0].id",
+                    "messages": ["This field may not be blank."],
+                    "path": ["editors", "0", "id"],
+                },
+                {
+                    "field": "editors[0].email",
+                    "messages": ["This field may not be blank."],
+                    "path": ["editors", "0", "email"],
+                },
+                {
+                    "field": "editors[1].id",
+                    "messages": ["This field may not be blank."],
+                    "path": ["editors", "1", "id"],
+                },
+                {
+                    "field": "editors[1].email",
+                    "messages": ["Enter a valid email address."],
+                    "path": ["editors", "1", "email"],
+                },
             ],
             "article": None,
         }
     }
+
 
 def test_serializer_client_id_mutation_create_with_ID_and_no_method_name(
     info_with_context
