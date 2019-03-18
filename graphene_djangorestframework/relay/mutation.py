@@ -170,6 +170,9 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
         for key, value in errors.items():
             if isinstance(value, dict):
                 formatted_errors += cls.format_errors(value, field=key + ".", path=path + [key])
+            elif isinstance(value, list):
+                for error in value:
+                    formatted_errors += cls.format_errors(error, field=key + ".", path=path + [key])
             else:
                 formatted_errors.append(
                     ErrorType(field=field + to_camel_case(key), messages=value, path=path + [key])
