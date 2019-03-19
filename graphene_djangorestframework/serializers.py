@@ -223,6 +223,7 @@ def convert_serializer_field_to_field(field):
     return graphene.Field
 
 
+@get_graphene_type_from_serializer_field.register(serializers.Serializer)
 @get_graphene_type_from_serializer_field.register(serializers.ModelSerializer)
 def convert_serializer_to_field(field):
     return graphene.Field
