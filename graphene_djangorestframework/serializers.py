@@ -75,14 +75,19 @@ class SerializerRelayIDField(serializers.CharField):
             else:
                 # We make sure the ObjectType implements the "Node" interface
                 if node_class not in graphene_type._meta.interfaces:
-                    self.fail("not_found", type=graphene_type._meta.model._meta.object_name)
+                    self.fail(
+                        "not_found", type=graphene_type._meta.model._meta.object_name
+                    )
 
                 get_node = getattr(graphene_type, "get_node", None)
                 if get_node:
                     instance = get_node(info, _id)
 
                     if not instance:
-                        self.fail("not_found", type=graphene_type._meta.model._meta.object_name)
+                        self.fail(
+                            "not_found",
+                            type=graphene_type._meta.model._meta.object_name,
+                        )
 
                     return instance
 
@@ -161,16 +166,12 @@ def convert_serializer_to_input_type(serializer_class):
         if converted_field:
             items[name] = converted_field
 
-    if hasattr(serializer.Meta, 'input_name'):
+    if hasattr(serializer.Meta, "input_name"):
         input_name = serializer.Meta.input_name
     else:
         input_name = "{}Input".format(serializer.__class__.__name__)
 
-    return type(
-        input_name,
-        (graphene.InputObjectType,),
-        items,
-    )
+    return type(input_name, (graphene.InputObjectType,), items)
 
 
 def fields_for_serializer(
@@ -235,6 +236,11 @@ def convert_list_serializer_to_field(field):
 
 @get_graphene_type_from_serializer_field.register(serializers.BooleanField)
 def convert_serializer_field_to_bool(field):
+    return graphene.Boolean
+
+
+@get_graphene_type_from_serializer_field.register(serializers.NullBooleanField)
+def convert_serializer_field_to_null_bool(field):
     return graphene.Boolean
 
 
