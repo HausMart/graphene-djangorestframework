@@ -135,6 +135,11 @@ def convert_serializer_field(field, is_input=True, is_partial=False):
             global_registry = get_global_registry()
             field_model = field.Meta.model
             args = [global_registry.get_type_for_model(field_model)]
+    elif isinstance(field, serializers.Serializer):
+        if is_input:
+            graphql_type = convert_serializer_to_input_type(field.__class__)
+        else:
+            raise ValueError("Only ModelSerializer cannot be treated as an input.")
     elif isinstance(field, SerializerDjangoObjectTypeField):
         if is_input:
             raise ValueError(
