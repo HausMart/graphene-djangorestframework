@@ -102,7 +102,7 @@ def get_graphene_type_from_serializer_field(field):
     )
 
 
-def convert_serializer_field(field, is_input=True, is_partial=False):
+def convert_serializer_field(field, registry, is_input=True, is_partial=False):
     """
     Converts a django rest frameworks field to a graphql field
     and marks the field as required if we are creating an input type
@@ -122,6 +122,9 @@ def convert_serializer_field(field, is_input=True, is_partial=False):
         "required": is_input and field.required and not is_partial,
     }
 
+    if registry is None:
+        registry = get_global_registry()
+
     # if it is a tuple or a list it means that we are returning
     # the graphql type and the child type
     if isinstance(graphql_type, (list, tuple)):
@@ -130,14 +133,13 @@ def convert_serializer_field(field, is_input=True, is_partial=False):
 
     if isinstance(field, serializers.ModelSerializer):
         if is_input:
-            graphql_type = convert_serializer_to_input_type(field.__class__)
+            graphql_type = convert_serializer_to_input_type(field.__class__, registry)
         else:
-            global_registry = get_global_registry()
             field_model = field.Meta.model
-            args = [global_registry.get_type_for_model(field_model)]
+            args = [registry.get_type_for_model(field_model)]
     elif isinstance(field, serializers.Serializer):
         if is_input:
-            graphql_type = convert_serializer_to_input_type(field.__class__)
+            graphql_type = convert_serializer_to_input_type(field.__class__, registry)
         else:
             raise ValueError("Only ModelSerializer cannot be treated as an input.")
     elif isinstance(field, SerializerDjangoObjectTypeField):
@@ -150,23 +152,22 @@ def convert_serializer_field(field, is_input=True, is_partial=False):
     elif isinstance(field, serializers.ListSerializer):
         field = field.child
         if is_input:
-            kwargs["of_type"] = convert_serializer_to_input_type(field.__class__)
+            kwargs["of_type"] = convert_serializer_to_input_type(field.__class__, registry)
         else:
             del kwargs["of_type"]
-            global_registry = get_global_registry()
             field_model = field.Meta.model
-            args = [global_registry.get_type_for_model(field_model)]
+            args = [registry.get_type_for_model(field_model)]
 
     return graphql_type(*args, **kwargs)
 
 
-def convert_serializer_to_input_type(serializer_class):
+def convert_serializer_to_input_type(serializer_class, registry):
     serializer = serializer_class()
 
     items = {}
 
     for name, field in serializer.fields.items():
-        converted_field = convert_serializer_field(field)
+        converted_field = convert_serializer_field(field, registry)
 
         if converted_field:
             items[name] = converted_field
@@ -183,6 +184,7 @@ def fields_for_serializer(
     serializer,
     only_fields,
     exclude_fields,
+    registry,
     is_input=False,
     is_update=False,
     is_partial=False,
@@ -201,7 +203,7 @@ def fields_for_serializer(
             continue
 
         converted_field = convert_serializer_field(
-            field, is_input=is_input, is_partial=is_partial
+            field, registry, is_input=is_input, is_partial=is_partial
         )
 
         if converted_field:

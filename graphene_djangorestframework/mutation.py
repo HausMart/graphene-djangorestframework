@@ -72,6 +72,7 @@ class SerializerBaseMutation(DjangoMutation):
         exclude_fields=(),
         is_update=False,
         partial=False,
+        registry=None,
         **options
     ):
 
@@ -94,6 +95,7 @@ class SerializerBaseMutation(DjangoMutation):
             serializer,
             only_fields,
             exclude_fields,
+            registry,
             is_input=True,
             is_update=is_update,
             is_partial=partial,
@@ -102,6 +104,7 @@ class SerializerBaseMutation(DjangoMutation):
             serializer,
             only_fields,
             exclude_fields,
+            registry,
             is_input=False,
             is_update=is_update,
             is_partial=partial,
@@ -120,6 +123,7 @@ class SerializerBaseMutation(DjangoMutation):
         _meta.partial = partial
         _meta.serializer_class = serializer_class
         _meta.model_class = model_class
+        _meta.registry = registry
         _meta.fields = yank_fields_from_attrs(output_fields, _as=DjangoField, sort=False)
 
         input_fields = yank_fields_from_attrs(input_fields, _as=Argument, sort=False)
