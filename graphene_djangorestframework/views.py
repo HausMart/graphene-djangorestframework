@@ -54,7 +54,7 @@ def instantiate_middleware(middlewares):
 
 
 class GraphQLAPIView(APIView):
-    graphiql_version = "0.11.10"
+    graphiql_version = "0.13.0"
     graphiql_template = "graphene/graphiql.html"
     graphiql = False
 
