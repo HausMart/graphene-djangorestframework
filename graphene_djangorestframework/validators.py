@@ -16,6 +16,21 @@ class BaseDocumentValidator:
     def allow_document(self, document, view):
         return True
 
+    def get_fragments(self, definitions):
+        fragment_definitions = {
+            d.name.value: d for d in definitions if isinstance(d, FragmentDefinition)
+        }
+
+        return fragment_definitions
+
+    def get_queries_and_mutations(self, definitions):
+        query_definitions = {
+            d.name.value if d.name and d.name.value else "": d
+            for d in definitions
+            if isinstance(d, OperationDefinition)
+        }
+
+        return query_definitions
 
 class DocumentDepthValidator(BaseDocumentValidator):
     """
@@ -45,22 +60,6 @@ class DocumentDepthValidator(BaseDocumentValidator):
                 return False
 
         return True
-
-    def get_fragments(self, definitions):
-        fragment_definitions = {
-            d.name.value: d for d in definitions if isinstance(d, FragmentDefinition)
-        }
-
-        return fragment_definitions
-
-    def get_queries_and_mutations(self, definitions):
-        query_definitions = {
-            d.name.value if d.name and d.name.value else "": d
-            for d in definitions
-            if isinstance(d, OperationDefinition)
-        }
-
-        return query_definitions
 
     def determine_depth(self, node, fragments, operation_name):
         if isinstance(node, Field):
@@ -92,3 +91,31 @@ class DocumentDepthValidator(BaseDocumentValidator):
             )
         else:
             raise Exception("Depth validation failed. Couldn't parse node type.")
+
+
+class DisableIntrospectionValidator(BaseDocumentValidator):
+    """
+        Credit to https://github.com/helfer/graphql-disable-introspection/.
+    """
+
+    default_message = _(
+        "GraphQL introspection is not allowed, but the query contained __schema or __type."
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def allow_document(self, document, view):
+        document_ast = document.document_ast
+        definitions = document_ast.definitions
+
+        queries = self.get_queries_and_mutations(definitions)
+
+        for name in queries:
+            if queries[name].selection_set:
+                for selection in queries[name].selection_set.selections:
+                    if selection.name.value == "__schema" or selection.name.value == "__type":
+                        self.message = force_text(self.default_message)
+                        return False
+
+        return True

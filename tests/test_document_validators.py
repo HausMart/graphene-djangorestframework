@@ -13,6 +13,13 @@ def url_string(string="/graphql/depth-limited/", **url_params):
     return string
 
 
+def url_string_introspection(string="/graphql/introspection-disabled/", **url_params):
+    if url_params:
+        string += "?" + urlencode(url_params)
+
+    return string
+
+
 def test_document_depth_validation_with_three_nested_paths_allowed(api_client):
     response = api_client.get(
         url_string(
@@ -113,3 +120,62 @@ def test_document_depth_validation_with_four_nested_paths_and_fragments_not_allo
         ]
     }
 
+
+def test_document_schema_introspection_schema_not_allowed(api_client):
+    response = api_client.get(
+        url_string_introspection(
+            query="""
+{
+  __schema {
+    types {
+      name
+    }
+  }
+}"""
+        )
+    )
+
+    assert response.status_code == 400
+    assert json.loads(response.content) == {
+        "errors": [
+            {
+                "message": "GraphQL introspection is not allowed, but the query contained __schema or __type."
+            }
+        ]
+    }
+
+
+def test_document_schema_introspection_type_not_allowed(api_client):
+    response = api_client.get(
+        url_string_introspection(
+            query="""
+{
+  __type(name: "ReporterType") {
+    name
+  }
+}"""
+        )
+    )
+
+    assert response.status_code == 400
+    assert json.loads(response.content) == {
+        "errors": [
+            {
+                "message": "GraphQL introspection is not allowed, but the query contained __schema or __type."
+            }
+        ]
+    }
+
+
+def test_document_schema_introspection_everything_else_allowed(api_client):
+    response = api_client.get(
+        url_string_introspection(
+            query="""
+{
+    test(who: "You")
+}"""
+        )
+    )
+
+    assert response.status_code == 200
+    assert json.loads(response.content) == {"data": {"test": "Hello You"}}
