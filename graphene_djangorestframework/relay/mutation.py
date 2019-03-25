@@ -65,13 +65,16 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
         only_fields=(),
         exclude_fields=(),
         is_update=False,
+        id_input_field=None,
         partial=False,
         registry=None,
         **options
     ):
 
         if not serializer_class:
-            raise Exception("serializer_class is required for SerializerClientIDMutation")
+            raise Exception(
+                "serializer_class is required for SerializerClientIDMutation"
+            )
 
         serializer = serializer_class()
         if model_class is None:
@@ -107,16 +110,19 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
             is_partial=partial,
         )
 
-        if is_update:
+        if is_update and id_input_field:
             input_fields = OrderedDict(
-                id=graphene.ID(
-                    required=True, description="ID of the object to update."
-                ),
+                **{
+                    id_input_field: graphene.ID(
+                        required=True, description="ID of the object to update."
+                    )
+                },
                 **input_fields
             )
 
         _meta = SerializerMutationOptions(cls)
         _meta.lookup_field = lookup_field
+        _meta.id_input_field = id_input_field
         _meta.partial = partial
         _meta.serializer_class = serializer_class
         _meta.model_class = model_class
@@ -172,11 +178,15 @@ class SerializerBaseClientIDMutation(DjangoClientIDMutation):
         for key, value in errors.items():
             key = to_camel_case(key)
             if isinstance(value, dict):
-                formatted_errors += cls.format_errors(value, field=key + ".", path=path + [key])
+                formatted_errors += cls.format_errors(
+                    value, field=key + ".", path=path + [key]
+                )
             elif isinstance(value, list) and value and isinstance(value[0], dict):
                 for idx, error in enumerate(value):
                     idx_key = "{}[{}]".format(key, idx)
-                    formatted_errors += cls.format_errors(error, field=idx_key + ".", path=path + [key, idx])
+                    formatted_errors += cls.format_errors(
+                        error, field=idx_key + ".", path=path + [key, idx]
+                    )
             else:
                 formatted_errors.append(
                     ErrorType(field=field + key, messages=value, path=path + [key])
@@ -231,6 +241,7 @@ class SerializerClientIDUpdateMutation(SerializerBaseClientIDMutation):
         node_class=None,
         only_fields=(),
         exclude_fields=(),
+        id_input_field="id",
         partial=False,
         **options
     ):
@@ -242,21 +253,30 @@ class SerializerClientIDUpdateMutation(SerializerBaseClientIDMutation):
             only_fields=only_fields,
             exclude_fields=exclude_fields,
             is_update=True,
+            id_input_field=id_input_field,
             partial=partial,
             **options
         )
 
     @classmethod
     def get_instance(cls, root, info, **input):
-        if not input.get("id"):
-            raise Exception('Invalid update operation. Input parameter "id" required.')
+        id_input_field = cls._meta.id_input_field
+
+        if not input.get(id_input_field):
+            raise Exception(
+                'Invalid update operation. Input parameter "{}" required.'.format(
+                    id_input_field
+                )
+            )
 
         model_class = cls._meta.model_class
         node_class = cls._meta.node_class
         registry = cls._meta.registry if cls._meta.registry else global_registry
 
         model_type = registry.get_type_for_model(model_class)
-        instance = node_class.get_node_from_global_id(info, input.get("id"), model_type)
+        instance = node_class.get_node_from_global_id(
+            info, input.get(id_input_field), model_type
+        )
 
         if instance is None:
             raise Http404(
