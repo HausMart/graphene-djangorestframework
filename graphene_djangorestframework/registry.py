@@ -2,6 +2,7 @@ class Registry(object):
     def __init__(self):
         self._registry = {}
         self._field_registry = {}
+        self._serializer_registry = {}
 
     def register(self, cls):
         from .types import DjangoObjectType
@@ -26,6 +27,12 @@ class Registry(object):
 
     def get_converted_field(self, field):
         return self._field_registry.get(field)
+
+    def register_converted_serializer(self, serializer, converted):
+        self._serializer_registry[serializer] = converted
+
+    def get_converted_serializer(self, serializer):
+        return self._serializer_registry.get(serializer)
 
 
 registry = None

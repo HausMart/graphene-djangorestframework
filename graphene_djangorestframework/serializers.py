@@ -152,7 +152,9 @@ def convert_serializer_field(field, registry, is_input=True, is_partial=False):
     elif isinstance(field, serializers.ListSerializer):
         field = field.child
         if is_input:
-            kwargs["of_type"] = convert_serializer_to_input_type(field.__class__, registry)
+            kwargs["of_type"] = convert_serializer_to_input_type(
+                field.__class__, registry
+            )
         else:
             del kwargs["of_type"]
             field_model = field.Meta.model
@@ -162,6 +164,11 @@ def convert_serializer_field(field, registry, is_input=True, is_partial=False):
 
 
 def convert_serializer_to_input_type(serializer_class, registry):
+    if registry is not None:
+        converted = registry.get_converted_serializer(serializer_class)
+        if converted:
+            return converted
+
     serializer = serializer_class()
 
     items = {}
@@ -177,7 +184,12 @@ def convert_serializer_to_input_type(serializer_class, registry):
     else:
         input_name = "{}Input".format(serializer.__class__.__name__)
 
-    return type(input_name, (graphene.InputObjectType,), items)
+    converted = type(input_name, (graphene.InputObjectType,), items)
+
+    if registry is not None:
+        registry.register_converted_serializer(serializer_class, converted)
+
+    return converted
 
 
 def fields_for_serializer(
