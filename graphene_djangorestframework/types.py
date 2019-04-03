@@ -41,6 +41,7 @@ def construct_fields(model, registry, only_fields, exclude_fields):
 
 class DjangoObjectTypeOptions(ObjectTypeOptions):
     model = None
+    id_field = None
     registry = None
     connection = None
 
@@ -52,6 +53,7 @@ class DjangoObjectType(ObjectType):
     def __init_subclass_with_meta__(
         cls,
         model=None,
+        id_field=None,
         registry=None,
         skip_registry=False,
         only_fields=(),
@@ -102,10 +104,14 @@ class DjangoObjectType(ObjectType):
                 "The connection must be a DjangoConnection. Received {}"
             ).format(connection.__name__)
 
+        if not id_field:
+            id_field = "pk"
+
         if not _meta:
             _meta = DjangoObjectTypeOptions(cls)
 
         _meta.model = model
+        _meta.id_field = id_field
         _meta.registry = registry
         _meta.filter_fields = filter_fields
         _meta.fields = django_fields
@@ -119,7 +125,7 @@ class DjangoObjectType(ObjectType):
             registry.register(cls)
 
     def resolve_id(self, info):
-        return self.pk
+        return getattr(self, info.parent_type.graphene_type._meta.id_field)
 
     @classmethod
     def is_type_of(cls, root, info):
@@ -137,7 +143,9 @@ class DjangoObjectType(ObjectType):
     @classmethod
     def get_node(cls, info, id):
         try:
-            return cls._meta.model.objects.get(pk=id)
+            return cls._meta.model.objects.get(**{
+                cls._meta.id_field: id
+            })
         except cls._meta.model.DoesNotExist:
             return None
 
