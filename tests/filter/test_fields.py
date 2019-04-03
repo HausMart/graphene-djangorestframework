@@ -719,3 +719,41 @@ def test_annotation_is_perserved(info_with_context):
 
     assert not result.errors
     assert result.data == expected
+
+
+def test_get_queryset_is_used(info_with_context):
+    class ReporterType(DjangoObjectType):
+        @classmethod
+        def get_queryset(cls, info):
+            return Reporter.objects.none()
+
+        class Meta:
+            model = Reporter
+            interfaces = (Node,)
+            filter_fields = ()
+            registry = filter_registry
+
+    class Query(ObjectType):
+        all_reporters = DjangoFilterConnectionField(ReporterType)
+
+    Reporter.objects.create(first_name="John", last_name="Doe")
+
+    schema = Schema(query=Query)
+
+    query = """
+        query NodeFilteringQuery {
+            allReporters {
+                edges {
+                    node {
+                        firstName
+                    }
+                }
+            }
+        }
+    """
+    expected = {"allReporters": {"edges": []}}
+
+    result = schema.execute(query, context=info_with_context().context)
+
+    assert not result.errors
+    assert result.data == expected

@@ -46,8 +46,11 @@ class DjangoConnectionField(ConnectionField):
     def model(self):
         return self.node_type._meta.model
 
-    def get_manager(self):
-        if self.on:
+    def get_manager_or_queryset(self):
+        get_queryset_attr = getattr(self.node_type, "get_queryset", None)
+        if callable(get_queryset_attr):
+            return get_queryset_attr
+        elif self.on:
             return getattr(self.model, self.on)
         else:
             return self.model._default_manager
@@ -64,7 +67,7 @@ class DjangoConnectionField(ConnectionField):
     def resolve_connection(cls, connection, default_manager, args, info, iterable):
         if iterable is None:
             iterable = default_manager
-        iterable = maybe_queryset(iterable)
+        iterable = maybe_queryset(iterable, info)
         if isinstance(iterable, QuerySet):
             if iterable is not default_manager:
                 default_queryset = maybe_queryset(default_manager)
@@ -126,7 +129,9 @@ class DjangoConnectionField(ConnectionField):
                 args["last"] = min(last, max_limit)
 
         iterable = resolver(root, info, **args)
-        on_resolve = partial(cls.resolve_connection, connection, default_manager, args, info)
+        on_resolve = partial(
+            cls.resolve_connection, connection, default_manager, args, info
+        )
 
         if Promise.is_thenable(iterable):
             return Promise.resolve(iterable).then(on_resolve)
@@ -138,7 +143,7 @@ class DjangoConnectionField(ConnectionField):
             self.connection_resolver,
             parent_resolver,
             self.type,
-            self.get_manager(),
+            self.get_manager_or_queryset(),
             self.max_limit,
             self.enforce_first_or_last,
             self.permission_classes,

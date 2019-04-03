@@ -3,6 +3,7 @@ from functools import partial
 
 from graphene.types.argument import to_arguments
 from ..relay.fields import DjangoConnectionField
+from ..utils import maybe_queryset
 from .utils import get_filtering_args_from_filterset, get_filterset_class
 
 
@@ -93,7 +94,7 @@ class DjangoFilterConnectionField(DjangoConnectionField):
         filter_kwargs = {k: v for k, v in args.items() if k in filtering_args}
         qs = filterset_class(
             data=filter_kwargs,
-            queryset=default_manager.get_queryset(),
+            queryset=maybe_queryset(default_manager),
             request=info.context.get('request', None) if info.context else None,
         ).qs
 
@@ -115,7 +116,7 @@ class DjangoFilterConnectionField(DjangoConnectionField):
             self.connection_resolver,
             parent_resolver,
             self.type,
-            self.get_manager(),
+            self.get_manager_or_queryset(),
             self.max_limit,
             self.enforce_first_or_last,
             self.permission_classes,

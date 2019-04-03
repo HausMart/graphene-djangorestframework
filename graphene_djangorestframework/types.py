@@ -15,7 +15,12 @@ from graphene.types.unmountedtype import UnmountedType
 from .relay.connection import DjangoConnection
 from .converter import convert_django_field_with_choices
 from .registry import Registry, get_global_registry
-from .utils import DJANGO_FILTER_INSTALLED, get_model_fields, is_valid_django_model
+from .utils import (
+    DJANGO_FILTER_INSTALLED,
+    get_model_fields,
+    is_valid_django_model,
+    maybe_queryset,
+)
 
 
 def construct_fields(model, registry, only_fields, exclude_fields):
@@ -142,10 +147,14 @@ class DjangoObjectType(ObjectType):
 
     @classmethod
     def get_node(cls, info, id):
+        get_queryset_attr = getattr(cls, "get_queryset", None)
+        if callable(get_queryset_attr):
+            queryset_or_manager = get_queryset_attr
+        else:
+            queryset_or_manager = cls._meta.model._default_manager
+
         try:
-            return cls._meta.model.objects.get(**{
-                cls._meta.id_field: id
-            })
+            return maybe_queryset(queryset_or_manager).get(**{cls._meta.id_field: id})
         except cls._meta.model.DoesNotExist:
             return None
 
