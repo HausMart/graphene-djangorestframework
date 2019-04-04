@@ -91,7 +91,7 @@ class DjangoListField(Field):
         check_permission_classes(info, cls, permission_classes)
         check_throttle_classes(info, cls, throttle_classes)
 
-        return maybe_queryset(resolver(root, info, **args))
+        return maybe_queryset(resolver(root, info, **args), info)
 
     def get_resolver(self, parent_resolver):
         return partial(

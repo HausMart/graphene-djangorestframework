@@ -33,7 +33,7 @@ def get_reverse_fields(model, local_field_names):
             yield (name, related)
 
 
-def maybe_queryset(value, info=None):
+def maybe_queryset(value, info):
     if isinstance(value, Manager):
         value = value.get_queryset()
     elif callable(value):

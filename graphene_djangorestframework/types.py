@@ -154,7 +154,7 @@ class DjangoObjectType(ObjectType):
             queryset_or_manager = cls._meta.model._default_manager
 
         try:
-            return maybe_queryset(queryset_or_manager).get(**{cls._meta.id_field: id})
+            return maybe_queryset(queryset_or_manager, info).get(**{cls._meta.id_field: id})
         except cls._meta.model.DoesNotExist:
             return None
 

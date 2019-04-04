@@ -70,7 +70,7 @@ class DjangoConnectionField(ConnectionField):
         iterable = maybe_queryset(iterable, info)
         if isinstance(iterable, QuerySet):
             if iterable is not default_manager:
-                default_queryset = maybe_queryset(default_manager)
+                default_queryset = maybe_queryset(default_manager, info)
                 iterable = cls.merge_querysets(default_queryset, iterable)
             _len = iterable.count()
         else:

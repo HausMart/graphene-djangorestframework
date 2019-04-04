@@ -94,7 +94,7 @@ class DjangoFilterConnectionField(DjangoConnectionField):
         filter_kwargs = {k: v for k, v in args.items() if k in filtering_args}
         qs = filterset_class(
             data=filter_kwargs,
-            queryset=maybe_queryset(default_manager),
+            queryset=maybe_queryset(default_manager, info),
             request=info.context.get('request', None) if info.context else None,
         ).qs
 
