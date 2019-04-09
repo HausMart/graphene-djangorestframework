@@ -171,7 +171,7 @@ class GraphQLAPIView(APIView):
         return query, variables, operation_name, id
 
     @staticmethod
-    def format_graphene_error(error):
+    def format_graphene_error(error, request):
         if isinstance(error, GraphQLError):
             return format_graphql_error(error)
 
@@ -277,7 +277,7 @@ class GraphQLAPIView(APIView):
 
             if execution_result.errors:
                 response["errors"] = [
-                    self.format_graphene_error(e) for e in execution_result.errors
+                    self.format_graphene_error(e, request) for e in execution_result.errors
                 ]
 
             if execution_result.invalid:
