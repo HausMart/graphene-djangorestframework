@@ -177,6 +177,12 @@ class SerializerBaseMutation(DjangoMutation):
         return formatted_errors
 
     @classmethod
+    def handle_serializer_errors(cls, serializer):
+        errors = cls.format_errors(serializer.errors)
+
+        return cls(errors=errors)
+
+    @classmethod
     def mutate(cls, root, info, **input):
         kwargs = cls.get_serializer_kwargs(root, info, **input)
         serializer = cls._meta.serializer_class(**kwargs)
@@ -184,9 +190,7 @@ class SerializerBaseMutation(DjangoMutation):
         if serializer.is_valid():
             return cls.perform_mutate(serializer, info)
         else:
-            errors = cls.format_errors(serializer.errors)
-
-            return cls(errors=errors)
+            return cls.handle_serializer_errors(serializer)
 
     @classmethod
     def perform_mutate(cls, serializer, info):
