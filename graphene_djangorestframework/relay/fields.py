@@ -48,10 +48,10 @@ class DjangoConnectionField(ConnectionField):
 
     def get_manager_or_queryset(self):
         get_queryset_attr = getattr(self.node_type, "get_queryset", None)
-        if callable(get_queryset_attr):
-            return get_queryset_attr
-        elif self.on:
+        if self.on:
             return getattr(self.model, self.on)
+        elif callable(get_queryset_attr):
+            return get_queryset_attr
         else:
             return self.model._default_manager
 
