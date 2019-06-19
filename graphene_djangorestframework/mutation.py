@@ -162,7 +162,7 @@ class SerializerBaseMutation(DjangoMutation):
         if path is None:
             path = []
         for key, value in errors.items():
-            key = to_camel_case(key)
+            key = to_camel_case(str(key))
             if isinstance(value, dict):
                 formatted_errors += cls.format_errors(value, field=key + ".", path=path + [key])
             elif isinstance(value, list) and value and isinstance(value[0], dict):
