@@ -3,7 +3,7 @@ from promise import Promise
 
 from django.db.models.query import QuerySet
 
-from graphene.relay import ConnectionField, PageInfo
+from graphene.relay import ConnectionField, PageInfo, Connection
 from graphql_relay.connection.arrayconnection import connection_from_list_slice
 
 from ..utils import maybe_queryset
@@ -30,9 +30,14 @@ class DjangoConnectionField(ConnectionField):
         from ..types import DjangoObjectType
 
         _type = super(ConnectionField, self).type
+
+        if issubclass(_type, Connection):
+            return _type
+
         assert issubclass(
             _type, DjangoObjectType
-        ), "DjangoConnectionField only accepts DjangoObjectType types"
+        ), "DjangoConnectionField only accepts DjangoObjectType and Connection types"
+
         assert _type._meta.connection, "The type {} doesn't have a connection".format(
             _type.__name__
         )
@@ -44,9 +49,12 @@ class DjangoConnectionField(ConnectionField):
 
     @property
     def model(self):
-        return self.node_type._meta.model
+        return getattr(self.node_type._meta, 'model', None)
 
     def get_manager_or_queryset(self):
+        if self.model is None:
+            return None
+
         get_queryset_attr = getattr(self.node_type, "get_queryset", None)
         if self.on:
             return getattr(self.model, self.on)
